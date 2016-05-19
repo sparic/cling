@@ -42,7 +42,7 @@ public class BrowserUpnpService extends AndroidUpnpServiceImpl {
             @Override
             public ServiceType[] getExclusiveServiceTypes() {
                 return new ServiceType[]{
-                    new UDAServiceType("SwitchPower")
+                    new UDAServiceType("MessageDisplay")
                 };
             }
             // DOC:SERVICE_TYPE

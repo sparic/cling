@@ -43,7 +43,7 @@ public class SwitchPower {
     private boolean status = false;
 
     @UpnpAction
-    public void setTarget(@UpnpInputArgument(name = "NewTargetValue") boolean newTargetValue) {
+     public void setTarget(@UpnpInputArgument(name = "NewTargetValue") boolean newTargetValue) {
         boolean targetOldValue = target;
         target = newTargetValue;
         boolean statusOldValue = status;

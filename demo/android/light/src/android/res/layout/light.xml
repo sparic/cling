@@ -2,10 +2,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="fill_parent"
-              android:layout_height="fill_parent">
+              android:layout_height="fill_parent"
+              >
     <ImageView
             android:id="@+id/light_imageview"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:scaleType="center"/>
+
+    <TextView
+            android:id="@+id/light_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            />
 </LinearLayout>

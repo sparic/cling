@@ -30,7 +30,7 @@
                         <sdk>
                             <!-- Don't forget to set your ANDROID_HOME environment variable to your SDK directory! -->
                             <path>${env.ANDROID_HOME}</path>
-                            <platform>15</platform>
+                            <platform>19</platform>
                         </sdk>
                         <androidManifestFile>${project.basedir}/src/android/AndroidManifest.xml</androidManifestFile>
                         <resourceDirectory>${project.basedir}/src/android/res</resourceDirectory>
@@ -57,6 +57,12 @@
             <artifactId>android</artifactId>
             <version>${android.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.greenrobot</groupId>
+            <artifactId>eventbus</artifactId>
+            <version>3.0.0</version>
         </dependency>
 
         <!-- For Android we use the Jetty transport in Cling -->

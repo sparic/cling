@@ -13,5 +13,6 @@
 
     <string name="registeringDevice">Registering UPnP BinaryLight device…</string>
     <string name="createDeviceFailed">Creating of BinaryLight failed, check the log!</string>
+    <string name="OK">OK</string>
 
 </resources>

@@ -16,17 +16,22 @@
 package org.fourthline.cling.demo.android.light;
 
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
+import android.app.AlertDialog;
+import android.content.*;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Looper;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
+import de.greenrobot.event.EventBus;
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
 import org.fourthline.cling.android.FixedAndroidLogHandler;
@@ -50,6 +55,10 @@ import org.fourthline.cling.transport.RouterException;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,20 +69,21 @@ import java.util.logging.Logger;
 // DOC:CLASS
 public class LightActivity extends Activity implements PropertyChangeListener {
 
+
     // DOC:CLASS
     private static final Logger log = Logger.getLogger(LightActivity.class.getName());
 
     // DOC:SERVICE_BINDING
     private AndroidUpnpService upnpService;
-
     private UDN udn = new UDN(UUID.randomUUID()); // TODO: Not stable!
-
+    private static View view ;
+    private static TextView textView;
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
         public void onServiceConnected(ComponentName className, IBinder service) {
             upnpService = (AndroidUpnpService) service;
 
-            LocalService<SwitchPower> switchPowerService = getSwitchPowerService();
+            LocalService<MessageDisplay> switchPowerService = getSwitchPowerService();
 
             // Register the device when this activity binds to the service for the first time
             if (switchPowerService == null) {
@@ -93,7 +103,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
             }
 
             // Obtain the state of the power switch and update the UI
-            setLightbulb(switchPowerService.getManager().getImplementation().getStatus());
+//            setLightbulb(switchPowerService.getManager().getImplementation().getMessage());
 
             // Start monitoring the power switch
             switchPowerService.getManager().getImplementation().getPropertyChangeSupport()
@@ -116,9 +126,12 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         // );
         // Logger.getLogger("org.fourthline.cling").setLevel(Level.FINEST);
         // DOC:LOGGING
-
         setContentView(R.layout.light);
 
+
+
+//        view = ;
+        textView = (TextView) findViewById(R.id.light_textview);
         getApplicationContext().bindService(
                 new Intent(this, AndroidUpnpServiceImpl.class),
                 serviceConnection,
@@ -131,7 +144,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         super.onDestroy();
 
         // Stop monitoring the power switch
-        LocalService<SwitchPower> switchPowerService = getSwitchPowerService();
+        LocalService<MessageDisplay> switchPowerService = getSwitchPowerService();
         if (switchPowerService != null)
             switchPowerService.getManager().getImplementation().getPropertyChangeSupport()
                     .removePropertyChangeListener(this);
@@ -139,7 +152,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         getApplicationContext().unbindService(serviceConnection);
     }
 
-    protected LocalService<SwitchPower> getSwitchPowerService() {
+    protected LocalService<MessageDisplay> getSwitchPowerService() {
         if (upnpService == null)
             return null;
 
@@ -147,8 +160,8 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         if ((binaryLightDevice = upnpService.getRegistry().getLocalDevice(udn, true)) == null)
             return null;
 
-        return (LocalService<SwitchPower>)
-                binaryLightDevice.findService(new UDAServiceType("SwitchPower", 1));
+        return (LocalService<MessageDisplay>)
+                binaryLightDevice.findService(new UDAServiceType("MessageDisplay", 1));
     }
     // DOC:SERVICE_BINDING
 
@@ -196,12 +209,22 @@ public class LightActivity extends Activity implements PropertyChangeListener {
     // DOC:PROPERTY_CHANGE
     public void propertyChange(PropertyChangeEvent event) {
         // This is regular JavaBean eventing, not UPnP eventing!
-        if (event.getPropertyName().equals("status")) {
-            log.info("Turning light: " + event.getNewValue());
-            setLightbulb((Boolean) event.getNewValue());
+        if (event.getPropertyName().equals("message")) {
+//            log.info("Turning light: " + event.getNewValue());
+//            setLightbulb((Boolean) event.getNewValue());
+            AlertDialog dialog = new AlertDialog.Builder(this).create();
+            dialog.setTitle("Message Display");
+            dialog.setMessage(event.getPropertyName());
+            dialog.setButton(
+                    getString(R.string.OK),
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    });
+            dialog.show();
         }
     }
-
     protected void setLightbulb(final boolean on) {
         runOnUiThread(new Runnable() {
             public void run() {
@@ -219,20 +242,20 @@ public class LightActivity extends Activity implements PropertyChangeListener {
             throws ValidationException, LocalServiceBindingException {
 
         DeviceType type =
-                new UDADeviceType("BinaryLight", 1);
+                new UDADeviceType("MessageSenderTool", 1);
 
         DeviceDetails details =
                 new DeviceDetails(
-                        "Friendly Binary Light",
+                        "Message UPnP Ray",
                         new ManufacturerDetails("ACME"),
-                        new ModelDetails("AndroidLight", "A light with on/off switch.", "v1")
+                        new ModelDetails("AndroidMessager", "to Say Hello info.", "v1")
                 );
 
         LocalService service =
-                new AnnotationLocalServiceBinder().read(SwitchPower.class);
+                new AnnotationLocalServiceBinder().read(MessageDisplay.class);
 
         service.setManager(
-                new DefaultServiceManager<>(service, SwitchPower.class)
+                new DefaultServiceManager<>(service, MessageDisplay.class)
         );
 
         return new LocalDevice(
@@ -301,6 +324,67 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         );
     }
     // DOC:CLASS_END
-    // ...
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    protected void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
+
+//    public void onEventMainThread(MessageEvent event){
+//        Toast.makeText(LightActivity.this, event.message, Toast.LENGTH_SHORT).show();
+//    }
+
+     public void onEventMainThread(FileEvent file){
+         try {
+             //显示图片
+
+             //保存图片
+             saveBitmapToFile(file.file,"/sdcard/namecard/");
+         } catch (IOException e) {
+             e.printStackTrace();
+         }
+     }
+
+    /**
+     * Save Bitmap to a file.保存图片到SD卡。
+     *
+     * @param bitmap
+     * @return error message if the saving is failed. null if the saving is
+     *         successful.
+     * @throws IOException
+     */
+    public static void saveBitmapToFile(Bitmap bitmap, String _file)
+            throws IOException {
+        BufferedOutputStream os = null;
+        try {
+            File file = new File(_file);
+            // String _filePath_file.replace(File.separatorChar +
+            // file.getName(), "");
+            int end = _file.lastIndexOf(File.separator);
+            String _filePath = _file.substring(0, end);
+            File filePath = new File(_filePath);
+            if (!filePath.exists()) {
+                filePath.mkdirs();
+            }
+            file.createNewFile();
+            os = new BufferedOutputStream(new FileOutputStream(file));
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (IOException e) {
+                    Log.e("Error", e.getMessage(), e);
+                }
+            }
+        }
+    }
 }
 // DOC:CLASS_END
